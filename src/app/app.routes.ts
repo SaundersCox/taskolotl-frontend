@@ -24,4 +24,8 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/not-found/not-found').then((m) => m.NotFound),
   },
+  {
+    path: 'gantt',
+    loadComponent: () => import('./features/gantt/gantt').then((m) => m.Gantt),
+  },
 ];
