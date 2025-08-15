@@ -5,14 +5,7 @@ interface BusStop {
 
 interface BusRoute {
   name: string;
+  baseColor?: string;
   isWeekday: boolean;
   busStops: BusStop[];
-}
-
-interface TimelineDataItem {
-  id: string;
-  group: string;
-  content: string; // Only string, not HTMLElement
-  start: Date;
-  title?: string;
 }

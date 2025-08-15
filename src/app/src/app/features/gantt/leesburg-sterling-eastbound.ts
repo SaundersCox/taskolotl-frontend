@@ -1,6 +1,7 @@
 export const leesburgSterlingEastbound: BusRoute = {
   name: '70 Leesburg-Sterling',
   isWeekday: true,
+  baseColor: '#8B4B7A',
   busStops: [
     {
       name: '1Loudoun (Start)',

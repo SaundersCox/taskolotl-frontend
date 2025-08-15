@@ -1,10 +1,21 @@
-export const rtcEveningStops: BusRoute = {
-  name: '312 Reston Town Center (Evening)',
+export const rtcStops: BusRoute = {
+  name: '312 Reston Town Center',
   isWeekday: true,
+  baseColor: '#A8C688',
   busStops: [
     {
       name: 'RTC (Start)',
       times: [
+        '',
+        '',
+        '5:13',
+        '5:37',
+        '6:02',
+        '6:38',
+        '7:03',
+        '7:27',
+        '7:52',
+        '8:28',
         '15:01',
         '15:26',
         '15:54',
@@ -26,6 +37,16 @@ export const rtcEveningStops: BusRoute = {
     {
       name: 'Winding Road',
       times: [
+        '4:39',
+        '5:03',
+        '5:28',
+        '5:52',
+        '6:17',
+        '6:53',
+        '7:18',
+        '7:42',
+        '8:08',
+        '8:44',
         '15:37',
         '16:02',
         '16:30',
@@ -47,6 +68,16 @@ export const rtcEveningStops: BusRoute = {
     {
       name: 'RTC (End)',
       times: [
+        '5:10',
+        '5:34',
+        '5:59',
+        '6:23',
+        '6:48',
+        '7:24',
+        '7:49',
+        '8:13',
+        '8:40',
+        '9:16',
         '15:51',
         '16:16',
         '16:44',

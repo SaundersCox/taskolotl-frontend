@@ -1,5 +1,6 @@
 export const countrysideStops: BusRoute = {
   name: '81 - Countryside',
+  baseColor: '#86863f',
   isWeekday: true,
   busStops: [
     {

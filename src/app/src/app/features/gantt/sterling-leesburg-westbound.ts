@@ -1,6 +1,7 @@
 export const sterlingLeesburgWestbound: BusRoute = {
   name: '70 Sterling-Leesburg',
   isWeekday: true,
+  baseColor: '#8B4B7A',
   busStops: [
     {
       name: 'NVCC (Start)',

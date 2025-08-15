@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { Timeline } from './timeline';
+import { Timeline } from 'vis-timeline';
 
 describe('Timeline', () => {
   let component: Timeline;
@@ -8,9 +7,8 @@ describe('Timeline', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Timeline]
-    })
-    .compileComponents();
+      imports: [Timeline],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(Timeline);
     component = fixture.componentInstance;
