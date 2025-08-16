@@ -1,0 +1,11 @@
+#timelineContainer {
+  padding: 1rem;
+}
+
+.timeline-controls {
+  display: flex;
+}
+
+.clear-btn {
+  background-color: rgb(255, 0, 0);
+}

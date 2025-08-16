@@ -1,11 +1,11 @@
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { DataItem, Timeline } from 'vis-timeline/standalone';
-import { countrysideStops } from '../countryside-stops';
-import { leesburgSterlingEastbound } from '../leesburg-sterling-eastbound';
-import { rtcStops } from '../rtc-stops';
-import { sterlingLeesburgWestbound } from '../sterling-leesburg-westbound';
-import { sterlingConnector } from '../sterling-stops';
-import { innovationStops } from '../innovation-stops';
+import { countrysideStops } from '../bus-routes/countryside-stops';
+import { innovationStops } from '../bus-routes/innovation-stops';
+import { leesburgSterlingEastbound } from '../bus-routes/leesburg-sterling-eastbound';
+import { rtcStops } from '../bus-routes/rtc-stops';
+import { sterlingLeesburgWestbound } from '../bus-routes/sterling-leesburg-westbound';
+import { sterlingConnector } from '../bus-routes/sterling-stops';
 
 @Component({
   selector: 'app-timeline',
@@ -45,8 +45,8 @@ export class TimelineComponent implements AfterViewInit {
       sterlingLeesburgWestbound,
       leesburgSterlingEastbound,
       rtcStops,
-      sterlingConnector,
       innovationStops,
+      sterlingConnector,
     ];
     const items = this.createRoutesDataSet(routes, this.today);
 
@@ -61,8 +61,15 @@ export class TimelineComponent implements AfterViewInit {
       orientation: 'top',
       stack: true,
       showCurrentTime: true,
-      start: new Date(),
-      end: new Date(new Date().getTime() + 1 * 60 * 60 * 1000), // 1 hour from now
+      start: new Date(new Date().getTime() - 30 * 60 * 1000),
+      end: new Date(new Date().getTime() + 60 * 60 * 1000),
+      zoomMin: 1000 * 60 * 30,
+      zoomMax: 1000 * 60 * 60 * 12,
+      zoomable: false,
+      verticalScroll: true,
+      horizontalScroll: true,
+      maxHeight: '700px',
+      editable: false,
     });
 
     this.timeline.on('select', (props: any) => {
@@ -121,6 +128,8 @@ export class TimelineComponent implements AfterViewInit {
 
       route.busStops.forEach((stop) => {
         stop.times.forEach((t, index) => {
+          if (!t || t.trim() === '') return;
+
           const [hourStr, minStr] = t.split(':');
           const hour = parseInt(hourStr);
           const minute = parseInt(minStr);
@@ -147,23 +156,12 @@ export class TimelineComponent implements AfterViewInit {
     return items;
   }
 
-  moveToCurrentTime(): void {
-    const now = new Date();
-    const threeHoursLater = new Date(now.getTime() + 3 * 60 * 60 * 1000); // Next 3 hours
-
-    this.timeline.setWindow(now, threeHoursLater, {
-      animation: {
-        duration: 500,
-        easingFunction: 'easeInOutQuad',
-      },
-    });
-  }
-
   moveToNextHours(hours: number): void {
     const now = new Date();
-    const laterTime = new Date(now.getTime() + hours * 60 * 60 * 1000);
+    const startTime = new Date(now.getTime() - 30 * 60 * 60);
+    const laterTime = new Date(startTime.getTime() + hours * 60 * 60 * 1000);
 
-    this.timeline.setWindow(now, laterTime, {
+    this.timeline.setWindow(startTime, laterTime, {
       animation: {
         duration: 500,
         easingFunction: 'easeInOutQuad',
@@ -184,7 +182,7 @@ export class TimelineComponent implements AfterViewInit {
 
       element.style.setProperty('outline', '1px solid #222', 'important');
       element.style.setProperty('z-index', '999', 'important');
-      element.style.setProperty('margin-top', '-.1rem', 'important');
+      element.style.setProperty('margin-top', '-.2rem', 'important');
       element.style.setProperty(
         'box-shadow',
         '0 4px 8px rgba(0, 0, 0, 0.2)',
@@ -275,14 +273,14 @@ export class TimelineComponent implements AfterViewInit {
       // Lighter variant (add 40 to each component, max 255)
       `#${Math.min(255, r + 25)
         .toString(16)
-        .padStart(2, '0')}${Math.min(255, g + 8)
+        .padStart(2, '0')}${Math.min(255, g + 20)
         .toString(16)
         .padStart(2, '0')}${Math.min(255, b - 12)
         .toString(16)
         .padStart(2, '0')}`,
 
       // Darker variant (subtract 40 from each component, min 0)
-      `#${Math.max(0, r + 30)
+      `#${Math.max(0, r - 19)
         .toString(16)
         .padStart(2, '0')}${Math.max(0, g - 20)
         .toString(16)
@@ -317,5 +315,23 @@ export class TimelineComponent implements AfterViewInit {
   private updateCurrentTimeMarker() {
     const now = new Date();
     this.timeline.setCustomTime(now, 'currentTime');
+  }
+
+  goToHour(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const hour = parseInt(target.value);
+
+    if (!isNaN(hour)) {
+      const today = new Date();
+      const startTime = new Date(today.setHours(hour, 0, 0, 0));
+      const endTime = new Date(today.setHours(hour + 2, 0, 0, 0)); // Show 2-hour window
+
+      this.timeline.setWindow(startTime, endTime, {
+        animation: {
+          duration: 500,
+          easingFunction: 'easeInOutQuad',
+        },
+      });
+    }
   }
 }
