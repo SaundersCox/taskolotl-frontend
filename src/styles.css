@@ -87,7 +87,6 @@ button,
   transition: all 0.2s ease;
   background-color: #3b82f6;
   color: white;
-  margin: 0.25rem;
 }
 
 button:hover,

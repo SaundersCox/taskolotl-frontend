@@ -1,39 +1,42 @@
-<h1>Loudoun County Bus Routes - Weekday</h1>
-<div class="timeline-controls">
-  <button (click)="moveToNextHours(1)" class="btn">Next 1 Hour</button>
-  <button (click)="moveToNextHours(2)" class="btn">Next 2 Hours</button>
-  <button (click)="moveToNextHours(3)" class="btn">Next 3 Hours</button>
-  <button (click)="clearAllSelections()" class="btn clear-btn">
-    Clear All Selections
-  </button>
-  <div class="hour-selector">
-    <select id="hourSelect" (change)="goToHour($event)">
-      <option value="">Select hour...</option>
-      <option value="0">12:00 AM</option>
-      <option value="1">1:00 AM</option>
-      <option value="2">2:00 AM</option>
-      <option value="3">3:00 AM</option>
-      <option value="4">4:00 AM</option>
-      <option value="5">5:00 AM</option>
-      <option value="6">6:00 AM</option>
-      <option value="7">7:00 AM</option>
-      <option value="8">8:00 AM</option>
-      <option value="9">9:00 AM</option>
-      <option value="10">10:00 AM</option>
-      <option value="11">11:00 AM</option>
-      <option value="12">12:00 PM</option>
-      <option value="13">1:00 PM</option>
-      <option value="14">2:00 PM</option>
-      <option value="15">3:00 PM</option>
-      <option value="16">4:00 PM</option>
-      <option value="17">5:00 PM</option>
-      <option value="18">6:00 PM</option>
-      <option value="19">7:00 PM</option>
-      <option value="20">8:00 PM</option>
-      <option value="21">9:00 PM</option>
-      <option value="22">10:00 PM</option>
-      <option value="23">11:00 PM</option>
-    </select>
+<div class="timeline-wrapper">
+  <div class="timeline-controls">
+    <button (click)="moveToNextHours(1)" class="btn">1hr</button>
+    <button (click)="moveToNextHours(2)" class="btn">2hr</button>
+    <button (click)="moveToNextHours(3)" class="btn">3hr</button>
+    <button (click)="clearAllSelections()" class="btn clear-btn">Clear</button>
+
+    <div class="hour-selector">
+      <select id="hour-select" (change)="goToHour($event)">
+        <option value="">Select hour...</option>
+        <!-- AM hours (0-11) -->
+        @for (hour of hours; track $index) {
+        <option [value]="$index">
+          {{ $index === 0 ? '12:00 AM' : $index + ':00 AM' }}
+        </option>
+        }
+
+        <!-- PM hours (12-23) -->
+        @for (hour of hours; track $index) {
+        <option [value]="$index + 12">
+          {{ $index === 0 ? '12:00 PM' : $index + ':00 PM' }}
+        </option>
+        }
+      </select>
+    </div>
+
+    <div class="weekend-toggle">
+      <label class="toggle-switch">
+        <input
+          type="checkbox"
+          [checked]="isWeekendMode"
+          (change)="toggleWeekendMode()"
+        />
+        <span class="slider"></span>
+      </label>
+      <div class="weekend-text">Weekend</div>
+    </div>
+  </div>
+  <div class="timeline-container-wrapper">
+    <div #timelineContainer></div>
   </div>
 </div>
-<div #timelineContainer></div>

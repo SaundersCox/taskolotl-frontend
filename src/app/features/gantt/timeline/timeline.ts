@@ -1,11 +1,14 @@
-import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
-import { DataItem, Timeline } from 'vis-timeline/standalone';
-import { countrysideStops } from '../bus-routes/countryside-stops';
-import { innovationStops } from '../bus-routes/innovation-stops';
-import { leesburgSterlingEastbound } from '../bus-routes/leesburg-sterling-eastbound';
-import { rtcStops } from '../bus-routes/rtc-stops';
-import { sterlingLeesburgWestbound } from '../bus-routes/sterling-leesburg-westbound';
-import { sterlingConnector } from '../bus-routes/sterling-stops';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  Input,
+  OnDestroy,
+  ViewChild,
+} from '@angular/core';
+import { debounceTime, fromEvent, Subject, takeUntil } from 'rxjs';
+import { Timeline } from 'vis-timeline/standalone';
+import { TimelineService } from './timeline-service';
 
 @Component({
   selector: 'app-timeline',
@@ -13,205 +16,231 @@ import { sterlingConnector } from '../bus-routes/sterling-stops';
   templateUrl: './timeline.html',
   styleUrl: './timeline.css',
 })
-export class TimelineComponent implements AfterViewInit {
+export class TimelineComponent implements AfterViewInit, OnDestroy {
   @ViewChild('timelineContainer', { static: true })
   container!: ElementRef<HTMLDivElement>;
-  today = new Date().toLocaleDateString('en-CA');
-  private currentTimeInterval: any;
+  @Input() busRoutes: BusRoute[] = [];
+  hours = Array.from({ length: 12 }, (_, i) => i);
+  private readonly destroy$ = new Subject<void>();
 
-  private readonly selectedItems: Set<string> = new Set(); // Track multiple selected items
+  private readonly today = new Date().toLocaleDateString('en-CA');
+  private readonly selectedItems = new Set<string>();
   private timeline!: Timeline;
+  private currentTimeInterval?: number;
+
+  constructor(private readonly timelineService: TimelineService) {}
+
+  ngOnInit() {
+    this.timelineService.isWeekendMode$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((isWeekend) => {
+        this.refreshTimeline();
+      });
+  }
+
+  get isWeekendMode(): boolean {
+    return this.timelineService.isWeekendMode;
+  }
 
   ngAfterViewInit() {
     this.initTimeline();
   }
 
-  ngOnDestroy(): void {
-    if (this.timeline) {
-      this.timeline.destroy();
-    }
-    if (this.currentTimeInterval) {
-      clearInterval(this.currentTimeInterval);
-    }
+  ngOnDestroy() {
+    this.timeline?.destroy();
+    if (this.currentTimeInterval) clearInterval(this.currentTimeInterval);
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   initTimeline() {
-    if (this.timeline) {
-      this.timeline.destroy();
-    }
+    this.timeline?.destroy();
 
-    const routes = [
-      countrysideStops,
-      sterlingLeesburgWestbound,
-      leesburgSterlingEastbound,
-      rtcStops,
-      innovationStops,
-      sterlingConnector,
-    ];
-    const items = this.createRoutesDataSet(routes, this.today);
+    // Pass routes to service methods
+    const items = this.timelineService.createRoutesDataSet(
+      this.busRoutes,
+      this.today
+    );
+    const groups = this.timelineService.createGroups(this.busRoutes);
+    const options = this.timelineService.getTimelineOptions();
 
-    const groups = routes.map((route, i) => ({
-      id: `route-${i}`,
-      content: route.name,
-    }));
+    this.timeline = new Timeline(
+      this.container.nativeElement,
+      items,
+      groups,
+      options
+    );
 
-    this.timeline = new Timeline(this.container.nativeElement, items, groups, {
-      selectable: true,
-      multiselect: true, // Enable multiselect
-      orientation: 'top',
-      stack: true,
-      showCurrentTime: true,
-      start: new Date(new Date().getTime() - 30 * 60 * 1000),
-      end: new Date(new Date().getTime() + 60 * 60 * 1000),
-      zoomMin: 1000 * 60 * 30,
-      zoomMax: 1000 * 60 * 60 * 12,
-      zoomable: false,
-      verticalScroll: true,
-      horizontalScroll: true,
-      maxHeight: '700px',
-      editable: false,
-    });
+    this.setupEventHandlers();
+    this.addCurrentTimeMarker();
+    this.currentTimeInterval = setInterval(
+      () => this.updateCurrentTimeMarker(),
+      60000
+    );
+    setTimeout(() => this.updateTimelineSize(), 100);
 
+    this.setupSelectionObserver();
+    this.setupDebouncedResize();
+  }
+
+  private setupEventHandlers() {
     this.timeline.on('select', (props: any) => {
-      if (props.items.length > 0) {
-        const clickedId = props.items[props.items.length - 1];
+      if (props.items.length === 0) return;
 
-        if (this.selectedItems.has(clickedId)) {
-          this.selectedItems.delete(clickedId);
-        } else {
-          this.selectedItems.add(clickedId);
-        }
+      const clickedId = props.items[props.items.length - 1];
 
-        this.timeline.setSelection(Array.from(this.selectedItems));
+      if (this.selectedItems.has(clickedId)) {
+        this.selectedItems.delete(clickedId);
+        this.highlightSelection(clickedId, false); // Remove highlight
+      } else {
+        this.selectedItems.add(clickedId);
+        this.highlightSelection(clickedId, true); // Add highlight
+      }
+
+      this.timeline.setSelection(Array.from(this.selectedItems));
+    });
+  }
+
+  clearAllSelections() {
+    this.selectedItems.forEach((id) => {
+      const el = document.querySelector(`[data-id="${id}"]`) as HTMLElement;
+      if (el) {
+        el.style.backgroundColor = '';
+        el.style.border = '';
       }
     });
-
-    setTimeout(() => {
-      this.setupSelectionObserver();
-    }, 500);
-
-    // Add current time marker
-    this.addCurrentTimeMarker();
-
-    // Update every minute
-    this.currentTimeInterval = setInterval(() => {
-      this.updateCurrentTimeMarker();
-    }, 60000);
-  }
-
-  private clearHighlight(itemId: string): void {
-    const el = document.querySelector(`[data-id="${itemId}"]`) as HTMLElement;
-    if (el) {
-      el.style.backgroundColor = '';
-      el.style.border = '';
-    }
-  }
-
-  clearAllSelections(): void {
-    this.selectedItems.forEach((itemId) => this.clearHighlight(itemId));
     this.selectedItems.clear();
     this.timeline.setSelection([]);
   }
 
-  private createRoutesDataSet(
-    routes: BusRoute[],
-    dateString: string
-  ): DataItem[] {
-    const items: DataItem[] = [];
-
-    routes.forEach((route, routeIndex) => {
-      const groupName = `route-${routeIndex}`;
-      const baseColor = route.baseColor;
-      let colors = baseColor
-        ? this.generateColorVariants(baseColor)
-        : ['#437373', '#694369', '#86863f'];
-
-      route.busStops.forEach((stop) => {
-        stop.times.forEach((t, index) => {
-          if (!t || t.trim() === '') return;
-
-          const [hourStr, minStr] = t.split(':');
-          const hour = parseInt(hourStr);
-          const minute = parseInt(minStr);
-
-          const [year, month, day] = dateString.split('-').map(Number);
-          const start = new Date(year, month - 1, day, hour, minute, 0, 0);
-
-          // Each index gets its own color (cycles through the 5 colors)
-          const colorIndex = index % colors.length;
-          const backgroundColor = colors[colorIndex];
-
-          items.push({
-            id: `${groupName}-${stop.name}-${index}`,
-            group: groupName,
-            content: `${stop.name} ${t}`,
-            start,
-            title: `${stop.name} ${t}`,
-            style: `background-color: ${backgroundColor}; border-color: ${backgroundColor}; color: white;`,
-          });
-        });
-      });
-    });
-
-    return items;
+  moveToNextHours(hours: number) {
+    const { startTime, laterTime } =
+      this.timelineService.createHoursWindow(hours);
+    this.animateToWindow(startTime, laterTime);
   }
 
-  moveToNextHours(hours: number): void {
+  goToHour(event: Event) {
+    const hour = parseInt((event.target as HTMLSelectElement).value);
+    if (isNaN(hour)) return;
+
+    const { startTime, endTime } = this.timelineService.createTimeWindow(
+      hour,
+      2
+    );
+    this.animateToWindow(startTime, endTime);
+  }
+
+  private animateToWindow(start: Date, end: Date) {
+    this.timeline.setWindow(start, end, {
+      animation: { duration: 500, easingFunction: 'easeInOutQuad' },
+    });
+  }
+
+  private addCurrentTimeMarker() {
     const now = new Date();
-    const startTime = new Date(now.getTime() - 30 * 60 * 60);
-    const laterTime = new Date(startTime.getTime() + hours * 60 * 60 * 1000);
+    this.timeline.addCustomTime(now, 'currentTime');
+    this.timeline.setCustomTimeTitle('Current Time', 'currentTime');
 
-    this.timeline.setWindow(startTime, laterTime, {
-      animation: {
-        duration: 500,
-        easingFunction: 'easeInOutQuad',
-      },
-    });
+    setTimeout(() => {
+      const timeBar = document.querySelector(
+        '.vis-custom-time[data-id="currentTime"]'
+      ) as HTMLElement;
+      if (timeBar) {
+        Object.assign(timeBar.style, {
+          backgroundColor: '#ff4444',
+          width: '3px',
+          zIndex: '999',
+        });
+      }
+    }, 100);
   }
 
-  private setupSelectionObserver(): void {
-    const timelineContainer = this.container.nativeElement;
+  private updateCurrentTimeMarker() {
+    this.timeline.setCustomTime(new Date(), 'currentTime');
+  }
 
-    const applySelectionStyle = (element: HTMLElement) => {
-      // Set transition first
+  private setupDebouncedResize() {
+    fromEvent(window, 'resize')
+      .pipe(debounceTime(500), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.updateTimelineSize();
+      });
+  }
+  private updateTimelineSize() {
+    const parentHeight =
+      this.container.nativeElement.parentElement?.clientHeight;
+    const parentWidth = this.container.nativeElement.parentElement?.clientWidth;
+    if (this.timeline && parentHeight && parentWidth) {
+      this.timeline.setOptions({
+        height: parentHeight - 70,
+        width: parentWidth - 15,
+      });
+      this.timeline.redraw();
+    }
+  }
+
+  private highlightSelection(itemId: string, isSelected: boolean) {
+    const element = document.querySelector(
+      `[data-id="${itemId}"]`
+    ) as HTMLElement;
+    if (!element) return;
+
+    const styles = isSelected
+      ? {
+          transition: 'all 0.2s ease',
+          outline: '1px solid #222',
+          zIndex: '999',
+          marginTop: '-.2rem',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+        }
+      : {
+          marginTop: '0',
+          boxShadow: 'none',
+        };
+
+    Object.entries(styles).forEach(([prop, value]) =>
       element.style.setProperty(
-        'transition',
-        'margin-top 0.2s ease, box-shadow 0.2s ease',
+        prop.replace(/([A-Z])/g, '-$1').toLowerCase(),
+        value,
         'important'
+      )
+    );
+
+    if (!isSelected) {
+      ['outline', 'z-index'].forEach((prop) =>
+        element.style.removeProperty(prop)
       );
-
-      element.style.setProperty('outline', '1px solid #222', 'important');
-      element.style.setProperty('z-index', '999', 'important');
-      element.style.setProperty('margin-top', '-.2rem', 'important');
-      element.style.setProperty(
-        'box-shadow',
-        '0 4px 8px rgba(0, 0, 0, 0.2)',
-        'important'
-      );
-    };
-
-    const removeSelectionStyle = (element: HTMLElement) => {
-      // Reset to original values to trigger reverse transition
-      element.style.setProperty('margin-top', '0', 'important');
-      element.style.setProperty('box-shadow', 'none', 'important');
-
-      // Remove other non-transitioning properties immediately
-      element.style.removeProperty('outline');
-      element.style.removeProperty('outline-offset');
-      element.style.removeProperty('z-index');
-
-      // Clean up transition properties after animation completes
       setTimeout(() => {
-        element.style.removeProperty('margin-top');
-        element.style.removeProperty('box-shadow');
-        element.style.removeProperty('transition');
+        ['margin-top', 'box-shadow', 'transition'].forEach((prop) =>
+          element.style.removeProperty(prop)
+        );
       }, 200);
-    };
+    }
+  }
 
-    const handleVisItem = (item: HTMLElement) => {
-      observer.observe(item, { attributes: true, attributeFilter: ['class'] });
-      if (item.classList.contains('vis-selected')) {
-        applySelectionStyle(item);
+  private setupSelectionObserver() {
+    const container = this.container.nativeElement;
+
+    const highlightElement = (element: HTMLElement, isSelected: boolean) => {
+      if (isSelected) {
+        Object.assign(element.style, {
+          transition: 'margin-top 0.2s ease, box-shadow 0.2s ease',
+          outline: '1px solid #222',
+          zIndex: '999',
+          marginTop: '-.2rem',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+        });
+      } else {
+        element.style.marginTop = '0';
+        element.style.boxShadow = 'none';
+        element.style.removeProperty('outline');
+        element.style.removeProperty('z-index');
+
+        setTimeout(() => {
+          element.style.removeProperty('margin-top');
+          element.style.removeProperty('box-shadow');
+          element.style.removeProperty('transition');
+        }, 200);
       }
     };
 
@@ -222,116 +251,55 @@ export class TimelineComponent implements AfterViewInit {
           mutation.attributeName === 'class'
         ) {
           const element = mutation.target as HTMLElement;
-          if (element.classList.contains('vis-selected')) {
-            applySelectionStyle(element);
-          } else if (element.classList.contains('vis-item')) {
-            removeSelectionStyle(element);
+          if (element.classList.contains('vis-item')) {
+            const isSelected = element.classList.contains('vis-selected');
+            highlightElement(element, isSelected);
           }
         }
 
         if (mutation.type === 'childList') {
           mutation.addedNodes.forEach((node: any) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
-              if (node.classList?.contains('vis-item')) {
-                handleVisItem(node as HTMLElement);
-              }
-              node
-                .querySelectorAll?.('.vis-item')
-                .forEach((item: Element) => handleVisItem(item as HTMLElement));
+              const items = node.classList?.contains('vis-item')
+                ? [node]
+                : Array.from(node.querySelectorAll?.('.vis-item') || []);
+
+              items.forEach((item: HTMLElement) => {
+                observer.observe(item, {
+                  attributes: true,
+                  attributeFilter: ['class'],
+                });
+                if (item.classList.contains('vis-selected')) {
+                  highlightElement(item, true);
+                }
+              });
             }
           });
         }
       });
     });
 
-    observer.observe(timelineContainer, {
+    observer.observe(container, {
       attributes: true,
       attributeFilter: ['class'],
       childList: true,
       subtree: true,
     });
-
-    timelineContainer
-      .querySelectorAll('.vis-item')
-      .forEach((item: Element) => handleVisItem(item as HTMLElement));
   }
 
-  generateColorVariants(baseHex: string): string[] {
-    // Remove # if present
-    const hex = baseHex.replace('#', '');
+  private refreshTimeline() {
+    const items = this.timelineService.createRoutesDataSet(
+      this.busRoutes,
+      new Date().toLocaleDateString()
+    );
 
-    // Convert hex to RGB
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
+    const groups = this.timelineService.createGroups(this.busRoutes);
 
-    // Generate 3 variants
-    const variants = [
-      // Original color
-      baseHex,
-
-      // Lighter variant (add 40 to each component, max 255)
-      `#${Math.min(255, r + 25)
-        .toString(16)
-        .padStart(2, '0')}${Math.min(255, g + 20)
-        .toString(16)
-        .padStart(2, '0')}${Math.min(255, b - 12)
-        .toString(16)
-        .padStart(2, '0')}`,
-
-      // Darker variant (subtract 40 from each component, min 0)
-      `#${Math.max(0, r - 19)
-        .toString(16)
-        .padStart(2, '0')}${Math.max(0, g - 20)
-        .toString(16)
-        .padStart(2, '0')}${Math.max(0, b - 12)
-        .toString(16)
-        .padStart(2, '0')}`,
-    ];
-
-    return variants;
+    this.timeline.setItems(items);
+    this.timeline.setGroups(groups);
   }
 
-  private addCurrentTimeMarker() {
-    const now = new Date();
-
-    // Add custom time to vis-timeline
-    this.timeline.addCustomTime(now, 'currentTime');
-    this.timeline.setCustomTimeTitle('Current Time', 'currentTime');
-
-    // Style the current time line (optional)
-    setTimeout(() => {
-      const timeBar = document.querySelector(
-        '.vis-custom-time[data-id="currentTime"]'
-      );
-      if (timeBar) {
-        (timeBar as HTMLElement).style.backgroundColor = '#ff4444';
-        (timeBar as HTMLElement).style.width = '3px';
-        (timeBar as HTMLElement).style.zIndex = '999';
-      }
-    }, 100);
-  }
-
-  private updateCurrentTimeMarker() {
-    const now = new Date();
-    this.timeline.setCustomTime(now, 'currentTime');
-  }
-
-  goToHour(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    const hour = parseInt(target.value);
-
-    if (!isNaN(hour)) {
-      const today = new Date();
-      const startTime = new Date(today.setHours(hour, 0, 0, 0));
-      const endTime = new Date(today.setHours(hour + 2, 0, 0, 0)); // Show 2-hour window
-
-      this.timeline.setWindow(startTime, endTime, {
-        animation: {
-          duration: 500,
-          easingFunction: 'easeInOutQuad',
-        },
-      });
-    }
+  toggleWeekendMode() {
+    this.timelineService.toggleWeekendMode();
   }
 }

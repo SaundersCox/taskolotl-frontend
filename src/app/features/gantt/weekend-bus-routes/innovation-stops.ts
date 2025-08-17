@@ -1,7 +1,7 @@
 export const innovationStops: BusRoute = {
   name: '321 Innovation',
   isWeekday: true,
-  baseColor: '#2563ab',
+  baseColor: '#398ff1ff',
   busStops: [
     {
       name: 'Innovation (Start)',
