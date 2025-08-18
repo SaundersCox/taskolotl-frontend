@@ -18,9 +18,8 @@
 }
 
 .timeline-container-wrapper {
-  flex: 1; /* Takes remaining space */
+  flex: 1;
   position: relative;
-  min-height: 400px;
 }
 
 .timeline-container {

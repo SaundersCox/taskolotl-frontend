@@ -12,8 +12,8 @@ export class TimelineService {
   private readonly dateService = inject(DateService);
 
   createGroups(routes: BusRoute[]) {
-    return routes.map((route, i) => ({
-      id: `route-${i}`,
+    return routes.map((route) => ({
+      id: route.routeNumber,
       content: route.name,
     }));
   }
@@ -21,8 +21,8 @@ export class TimelineService {
   createRoutesDataSet(routes: BusRoute[], dateString: string): DataItem[] {
     const items: DataItem[] = [];
 
-    routes.forEach((route, routeIndex) => {
-      const groupName = `route-${routeIndex}`;
+    routes.forEach((route) => {
+      const groupName = route.routeNumber;
       const baseColor = route.baseColor;
       const colors = baseColor
         ? this.generateColorVariants(baseColor)

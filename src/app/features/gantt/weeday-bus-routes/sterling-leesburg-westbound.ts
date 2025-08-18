@@ -2,6 +2,7 @@ import { BusRoute } from './models';
 
 export const sterlingLeesburgWestbound: BusRoute = {
   name: '70 Sterling-Leesburg',
+  routeNumber: '70W',
   baseColor: '#b5467cff',
   weekdayBusStops: [
     {

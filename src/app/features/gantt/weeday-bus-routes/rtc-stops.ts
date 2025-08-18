@@ -2,6 +2,7 @@ import { BusRoute } from './models';
 
 export const rtcStops: BusRoute = {
   name: '312 Reston Town Center',
+  routeNumber: '312',
   baseColor: '#A8C688',
   weekdayBusStops: [
     {

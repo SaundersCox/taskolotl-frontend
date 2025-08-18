@@ -2,6 +2,7 @@ import { BusRoute } from './models';
 
 export const sterlingConnector: BusRoute = {
   name: '82 Sterling Connector',
+  routeNumber: '82',
   baseColor: '#4Bab5B',
   weekdayBusStops: [
     {

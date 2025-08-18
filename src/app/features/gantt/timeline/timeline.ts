@@ -7,13 +7,18 @@ import {
   Input,
   OnChanges,
   OnDestroy,
+  signal,
   Signal,
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { debounceTime, fromEvent } from 'rxjs';
-import { Timeline, TimelineOptions } from 'vis-timeline/standalone';
+import { debounceTime, fromEvent, merge } from 'rxjs';
+import {
+  Timeline,
+  TimelineOptions,
+  TimelineOptionsTemplateFunction,
+} from 'vis-timeline/standalone';
 import { TimelineService } from './timeline-service';
 import { DateService } from '../../../shared/date-service';
 import { BusRoute } from '../weeday-bus-routes/models';
@@ -45,6 +50,7 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
   private readonly dateService = inject(DateService);
   private readonly selectedItems = new Set<string>();
 
+  isLoading = signal(true);
   weekendMode: Signal<boolean> = this.dateService.weekendMode;
 
   private timeline?: Timeline;
@@ -52,7 +58,7 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
   private selectionObserver?: MutationObserver;
 
   constructor() {
-    fromEvent(window, 'resize')
+    merge(fromEvent(window, 'resize'), fromEvent(window, 'orientationchange'))
       .pipe(debounceTime(TimelineComponent.RESIZE_DELAY), takeUntilDestroyed())
       .subscribe(() => this.updateTimelineSize());
 
@@ -106,6 +112,7 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
   // Timeline initialization
   private initTimeline() {
     try {
+      this.isLoading.set(true);
       this.cleanup();
 
       // Create timeline with data and options
@@ -139,6 +146,10 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
       // Setup selection observer and initial resize
       this.setupSelectionObserver();
       this.updateTimelineSize();
+
+      setTimeout(() => {
+        this.isLoading.set(false);
+      }, 100);
     } catch (error) {
       console.error('Failed to initialize timeline', error);
     }
@@ -280,6 +291,14 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
       verticalScroll: true,
       horizontalScroll: true,
       editable: false,
+      groupTemplate: (group: TimelineOptionsTemplateFunction) => group.name,
+      // Reduce left margin
+      margin: {
+        item: {
+          horizontal: 10,
+          vertical: 5,
+        },
+      },
     };
   }
 }

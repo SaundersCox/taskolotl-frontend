@@ -3,6 +3,7 @@ import { BusRoute } from './models';
 export const innovationStops: BusRoute = {
   name: '321 Innovation',
   baseColor: '#00809aff',
+  routeNumber: '321',
   weekdayBusStops: [
     {
       name: 'Innovation (Start)',
