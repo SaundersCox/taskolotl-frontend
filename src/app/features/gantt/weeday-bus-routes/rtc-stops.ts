@@ -1,8 +1,9 @@
+import { BusRoute } from './models';
+
 export const rtcStops: BusRoute = {
   name: '312 Reston Town Center',
-  isWeekday: true,
   baseColor: '#A8C688',
-  busStops: [
+  weekdayBusStops: [
     {
       name: 'RTC (Start)',
       times: [
@@ -97,4 +98,5 @@ export const rtcStops: BusRoute = {
       ],
     },
   ],
+  weekendBusStops: [],
 };

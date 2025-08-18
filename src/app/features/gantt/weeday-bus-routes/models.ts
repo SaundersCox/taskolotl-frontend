@@ -2,10 +2,9 @@ interface BusStop {
   name: string;
   times: string[];
 }
-
-interface BusRoute {
+export interface BusRoute {
   name: string;
   baseColor?: string;
-  isWeekday: boolean;
-  busStops: BusStop[];
+  weekdayBusStops: BusStop[];
+  weekendBusStops: BusStop[];
 }

@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { DateService } from '../../shared/date-service';
 import { TimelineComponent } from './timeline/timeline';
 import { countrysideStops } from './weeday-bus-routes/countryside-stops';
 import { innovationStops } from './weeday-bus-routes/innovation-stops';
@@ -14,16 +15,9 @@ import { sterlingConnector } from './weeday-bus-routes/sterling-stops';
   styleUrl: './gantt.css',
 })
 export class Gantt {
-  weekdayBusRoutes = [
-    countrysideStops,
-    sterlingLeesburgWestbound,
-    leesburgSterlingEastbound,
-    rtcStops,
-    innovationStops,
-    sterlingConnector,
-  ];
+  private readonly dateService = inject(DateService);
 
-  weekendBusRoutes = [
+  readonly busRoutes = [
     countrysideStops,
     sterlingLeesburgWestbound,
     leesburgSterlingEastbound,

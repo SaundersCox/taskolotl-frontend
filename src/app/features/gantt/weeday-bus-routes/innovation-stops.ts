@@ -1,8 +1,9 @@
+import { BusRoute } from './models';
+
 export const innovationStops: BusRoute = {
   name: '321 Innovation',
-  isWeekday: true,
   baseColor: '#00809aff',
-  busStops: [
+  weekdayBusStops: [
     {
       name: 'Innovation (Start)',
       times: [
@@ -145,4 +146,5 @@ export const innovationStops: BusRoute = {
       ],
     },
   ],
+  weekendBusStops: [],
 };

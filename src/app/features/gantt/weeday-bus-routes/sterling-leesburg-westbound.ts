@@ -1,8 +1,9 @@
+import { BusRoute } from './models';
+
 export const sterlingLeesburgWestbound: BusRoute = {
   name: '70 Sterling-Leesburg',
-  isWeekday: true,
   baseColor: '#b5467cff',
-  busStops: [
+  weekdayBusStops: [
     {
       name: 'NVCC (Start)',
       times: [
@@ -100,4 +101,5 @@ export const sterlingLeesburgWestbound: BusRoute = {
       ],
     },
   ],
+  weekendBusStops: [],
 };

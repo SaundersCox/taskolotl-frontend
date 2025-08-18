@@ -3,18 +3,17 @@
     <button (click)="moveToNextHours(1)" class="btn">1hr</button>
     <button (click)="moveToNextHours(2)" class="btn">2hr</button>
     <button (click)="moveToNextHours(3)" class="btn">3hr</button>
-    <button (click)="clearAllSelections()" class="btn clear-btn">Clear</button>
+    <button (click)="clearSelections()" class="btn clear-btn">Clear</button>
 
     <div class="hour-selector">
       <select id="hour-select" (change)="goToHour($event)">
-        <option value="">Select hour...</option>
+        <option value="">Hour</option>
         <!-- AM hours (0-11) -->
         @for (hour of hours; track $index) {
         <option [value]="$index">
           {{ $index === 0 ? '12:00 AM' : $index + ':00 AM' }}
         </option>
         }
-
         <!-- PM hours (12-23) -->
         @for (hour of hours; track $index) {
         <option [value]="$index + 12">
@@ -26,9 +25,10 @@
 
     <div class="weekend-toggle">
       <label class="toggle-switch">
+        <!-- TODO -->
         <input
           type="checkbox"
-          [checked]="isWeekendMode"
+          [checked]="weekendMode()"
           (change)="toggleWeekendMode()"
         />
         <span class="slider"></span>

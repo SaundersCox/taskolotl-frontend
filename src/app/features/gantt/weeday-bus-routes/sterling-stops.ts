@@ -1,8 +1,9 @@
+import { BusRoute } from './models';
+
 export const sterlingConnector: BusRoute = {
   name: '82 Sterling Connector',
-  isWeekday: true,
   baseColor: '#4Bab5B',
-  busStops: [
+  weekdayBusStops: [
     {
       name: 'DTC',
       times: [
@@ -54,4 +55,5 @@ export const sterlingConnector: BusRoute = {
       ],
     },
   ],
+  weekendBusStops: [],
 };
