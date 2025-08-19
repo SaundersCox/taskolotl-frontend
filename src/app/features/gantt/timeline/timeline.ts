@@ -23,7 +23,6 @@ import { TimelineService } from './timeline-service';
 import { DateService } from '../../../shared/date-service';
 import { BusRoute } from '../weeday-bus-routes/models';
 
-// Define the select event interface
 interface TimelineSelectEvent {
   items: string[];
   event: Event;
@@ -41,7 +40,7 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
   private static readonly RESIZE_DELAY = 100;
 
   @Input() busRoutes: BusRoute[] = [];
-  hours = Array.from({ length: 12 }, (_, i) => i);
+  hours = Array.from({ length: 19 }, (_, i) => i);
 
   @ViewChild('timelineContainer', { static: true })
   container!: ElementRef<HTMLDivElement>;
@@ -299,6 +298,7 @@ export class TimelineComponent implements AfterViewInit, OnChanges, OnDestroy {
           vertical: 5,
         },
       },
+      align: 'left',
     };
   }
 }

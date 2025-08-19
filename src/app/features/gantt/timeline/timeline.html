@@ -6,19 +6,10 @@
     <button (click)="clearSelections()" class="btn clear-btn">Clear</button>
 
     <div class="hour-selector">
-      <select id="hour-select" (change)="goToHour($event)">
+      <select id="hour-select" (change)="goToHour($event )">
         <option value="">Hour</option>
-        <!-- AM hours (0-11) -->
         @for (hour of hours; track $index) {
-        <option [value]="$index">
-          {{ $index === 0 ? '12:00 AM' : $index + ':00 AM' }}
-        </option>
-        }
-        <!-- PM hours (12-23) -->
-        @for (hour of hours; track $index) {
-        <option [value]="$index + 12">
-          {{ $index === 0 ? '12:00 PM' : $index + ':00 PM' }}
-        </option>
+        <option [value]="$index + 4">{{$index + 4}}:00</option>
         }
       </select>
     </div>

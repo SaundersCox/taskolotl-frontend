@@ -104,7 +104,7 @@ export const sterlingLeesburgWestbound: BusRoute = {
   ],
   weekendBusStops: [
     {
-      name: 'Signal Hill (Start)',
+      name: 'Signal (Start)',
       times: [
         '08:45',
         '09:15',
