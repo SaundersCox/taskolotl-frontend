@@ -24,9 +24,9 @@
     </div>
 
     <div class="weekend-toggle">
-      <label class="toggle-switch">
-        <!-- TODO -->
+      <label class="toggle-switch" for="weekend-toggle-input">
         <input
+          id="weekend-toggle-input"
           type="checkbox"
           [checked]="weekendMode()"
           (change)="toggleWeekendMode()"
